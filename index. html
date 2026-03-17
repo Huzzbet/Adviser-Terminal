@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Adviser Terminal — Preferred Portfolio</title>
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --panel:#111111;
+    --panel2:#161616;
+    --panel3:#1b1b1b;
+    --border:#242424;
+    --border-soft:#1d1d1d;
+    --text:#e8e8e8;
+    --muted:#9a9a9a;
+    --muted2:#6f6f6f;
+
+    --green:#00c853;
+    --red:#ff5252;
+    --amber:#ffb300;
+    --blue:#3d7eff;
+    --cyan:#00bcd4;
+    --white:#f5f5f5;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"SF Mono","Roboto Mono","Menlo","Monaco","Consolas","Liberation Mono","Courier New",monospace;
+    -webkit-font-smoothing:antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app{
+    min-height:100vh;
+    display:grid;
+    grid-template-rows:auto auto auto 1fr;
+  }
+
+  .topbar{
+    display:grid;
+    grid-template-columns:auto 1fr auto auto auto;
+    align-items:center;
+    gap:14px;
+    padding:10px 16px;
+    border-bottom:1px solid var(--border);
+    background:#0c0c0c;
+  }
+
+  .brand{
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:.03em;
+    color:var(--white);
+  }
+
+  .brand span{
+    color:var(--blue);
+  }
+
+  .search-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+
+  .search{
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px 12px;
+    outline:none;
+    font:inherit;
+  }
+
+  .top-btn{
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+    padding:8px 10px;
+    font:inherit;
+    cursor:pointer;
+  }
+
+  .top-btn:hover,
+  .filter-btn:hover,
+  .toolbar-btn:hover{
+    background:var(--panel3);
+  }
+
+  .clock{
+    color:var(--muted);
+    font-size:12px;
+    white-space:nowrap;
+  }
+
+  .ticker-tape{
+    display:flex;
+    gap:18px;
+    overflow:auto;
+    padding:8px 16px;
+    border-bottom:1px solid var(--border);
+    background:#0d0d0d;
+    scrollbar-width:none;
+  }
+  .ticker-tape::-webkit-scrollbar{display:none}
+
+  .ticker-item{
+    white-space:nowrap;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .ticker-symbol{
+    color:var(--text);
+    margin-right:6px;
+    font-weight:700;
+  }
+
+  .ticker-up{color:var(--green)}
+  .ticker-down{color:var(--red)}
+  .ticker-neutral{color:var(--muted)}
+
+  .summary-strip{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:0;
+    border-bottom:1px solid var(--border);
+    border-top:1px solid var(--border-soft);
+    background:#0f0f0f;
+  }
+
+  .summary-cell{
+    padding:14px 16px 12px;
+    border-right:1px solid var(--border);
+    min-height:74px;
+  }
+
+  .summary-cell:last-child{border-right:none}
+
+  .summary-label{
+    color:var(--muted2);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:8px;
+  }
+
+  .summary-value{
+    font-size:22px;
+    font-weight:700;
+    line-height:1;
+    color:var(--white);
+  }
+
+  .summary-note{
+    margin-top:6px;
+    font-size:11px;
+    color:var(--muted);
+  }
+
+  .main{
+    display:grid;
+    grid-template-columns:1fr 340px;
+    min-height:0;
+  }
+
+  .left{
+    min-width:0;
+    border-right:1px solid var(--border);
+    display:grid;
+    grid-template-rows:auto 1fr;
+  }
+
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    background:#101010;
+    flex-wrap:wrap;
+  }
+
+  .toolbar-left,
+  .toolbar-right{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .toolbar-title{
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-right:8px;
+  }
+
+  .filter-btn,
+  .toolbar-btn{
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+    padding:7px 9px;
+    font:inherit;
+    font-size:12px;
+    cursor:pointer;
+  }
+
+  .filter-btn.active{
+    border-color:var(--blue);
+    color:var(--white);
+    background:#121826;
+  }
+
+  .table-wrap{
+    overflow:auto;
+    min-height:0;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+
+  thead th{
+    position:sticky;
+    top:0;
+    z-index:3;
+    background:#111111;
+    color:#8d8d8d;
+    text-align:left;
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:.08em;
+    padding:10px 10px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+
+  thead th.right,
+  tbody td.right{
+    text-align:right;
+  }
+
+  tbody td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--border-soft);
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+
+  tbody tr:hover{
+    background:#141414;
+  }
+
+  tbody tr.dimmed{
+    opacity:.45;
+  }
+
+  .ticker{
+    font-weight:700;
+    color:var(--white);
+  }
+
+  .company{
+    color:var(--text);
+  }
+
+  .muted{
+    color:var(--muted);
+  }
+
+  .pos{color:var(--green)}
+  .neg{color:var(--red)}
+  .neu{color:var(--muted)}
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:54px;
+    padding:3px 7px;
+    border-radius:3px;
+    font-size:11px;
+    font-weight:700;
+    line-height:1.2;
+    border:1px solid transparent;
+  }
+
+  .buy{
+    color:var(--green);
+    background:rgba(0,200,83,.10);
+    border-color:rgba(0,200,83,.18);
+  }
+
+  .hold{
+    color:var(--amber);
+    background:rgba(255,179,0,.10);
+    border-color:rgba(255,179,0,.18);
+  }
+
+  .sell{
+    color:var(--red);
+    background:rgba(255,82,82,.10);
+    border-color:rgba(255,82,82,.18);
+  }
+
+  .core{
+    color:var(--blue);
+    background:rgba(61,126,255,.10);
+    border-color:rgba(61,126,255,.18);
+  }
+
+  .review{
+    color:var(--amber);
+    background:rgba(255,179,0,.10);
+    border-color:rgba(255,179,0,.18);
+  }
+
+  .legacy{
+    color:var(--red);
+    background:rgba(255,82,82,.10);
+    border-color:rgba(255,82,82,.18);
+  }
+
+  .signal-strong{
+    color:var(--green);
+    font-weight:700;
+  }
+  .signal-watch{
+    color:var(--amber);
+    font-weight:700;
+  }
+  .signal-risk{
+    color:var(--red);
+    font-weight:700;
+  }
+  .signal-neutral{
+    color:var(--muted);
+    font-weight:700;
+  }
+
+  .right-panel{
+    background:#0f0f0f;
+    min-height:0;
+    overflow:auto;
+  }
+
+  .side-section{
+    border-bottom:1px solid var(--border);
+  }
+
+  .side-head{
+    padding:12px 14px;
+    background:#101010;
+    border-bottom:1px solid var(--border-soft);
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+
+  .side-body{
+    padding:12px 14px;
+  }
+
+  .insight{
+    padding:10px 0;
+    border-bottom:1px solid var(--border-soft);
+  }
+
+  .insight:last-child{border-bottom:none;padding-bottom:0}
+  .insight:first-child{padding-top:0}
+
+  .insight-title{
+    font-size:12px;
+    color:var(--white);
+    margin-bottom:5px;
+  }
+
+  .insight-copy{
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.5;
+  }
+
+  .kpi-list{
+    display:grid;
+    gap:10px;
+  }
+
+  .kpi-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    font-size:12px;
+  }
+
+  .kpi-row .label{color:var(--muted)}
+  .kpi-row .value{color:var(--white); font-weight:700}
+
+  .footer-note{
+    padding:10px 14px 14px;
+    color:var(--muted2);
+    font-size:10.5px;
+    line-height:1.5;
+  }
+
+  .help{
+    color:var(--muted2);
+    font-size:11px;
+  }
+
+  @media (max-width:1200px){
+    .main{grid-template-columns:1fr}
+    .left{border-right:none}
+    .summary-strip{grid-template-columns:repeat(3,1fr)}
+  }
+
+  @media (max-width:760px){
+    .topbar{
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .search{max-width:none}
+    .summary-strip{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">ADVISER <span>TERMINAL</span></div>
+    <div class="search-wrap">
+      <input id="searchInput" class="search" type="text" placeholder="Search ticker, company, sector…  (/)" />
+    </div>
+    <button class="top-btn" id="sortUpsideBtn">Sort Upside [U]</button>
+    <button class="top-btn" id="toggleRiskBtn">Risk View [R]</button>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <div class="ticker-tape" id="tickerTape"></div>
+
+  <div class="summary-strip" id="summaryStrip"></div>
+
+  <div class="main">
+    <div class="left">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-title">Filters</div>
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="core">Core</button>
+          <button class="filter-btn" data-filter="review">Review</button>
+          <button class="filter-btn" data-filter="high-upside">Upside > 20%</button>
+          <button class="filter-btn" data-filter="buy">Consensus Buy</button>
+        </div>
+        <div class="toolbar-right">
+          <div class="help">Click headers to sort • / search • U upside • R risk</div>
+          <button class="toolbar-btn" id="resetBtn">Reset View</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="rank">Rank</th>
+              <th data-sort="ticker">Ticker</th>
+              <th data-sort="name">Company</th>
+              <th data-sort="sector">Sector</th>
+              <th class="right" data-sort="weight">Weight</th>
+              <th class="right" data-sort="price">Price</th>
+              <th class="right" data-sort="target">Target</th>
+              <th class="right" data-sort="upside">Upside</th>
+              <th data-sort="consensus">Consensus</th>
+              <th class="right" data-sort="buy">Buy</th>
+              <th class="right" data-sort="hold">Hold</th>
+              <th class="right" data-sort="sell">Sell</th>
+              <th data-sort="signal">Signal</th>
+              <th data-sort="status">Status</th>
+              <th data-sort="lastUpdate">Updated</th>
+            </tr>
+          </thead>
+          <tbody id="holdingsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="right-panel">
+      <section class="side-section">
+        <div class="side-head">Top Opportunities</div>
+        <div class="side-body" id="topOpportunities"></div>
+      </section>
+
+      <section class="side-section">
+        <div class="side-head">Risk Flags</div>
+        <div class="side-body" id="riskFlags"></div>
+      </section>
+
+      <section class="side-section">
+        <div class="side-head">Portfolio Snapshot</div>
+        <div class="side-body">
+          <div class="kpi-list" id="snapshotKpis"></div>
+        </div>
+      </section>
+
+      <section class="side-section">
+        <div class="side-head">House View Notes</div>
+        <div class="side-body" id="houseViewNotes"></div>
+      </section>
+
+      <div class="footer-note">
+        Internal preferred portfolio terminal. Bloomberg-inspired layout for adviser use.
+        Target weights, live market feeds, performance history, and valuation notes can be layered in next.
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const portfolio = [
+  {
+    ticker:"CSL",
+    name:"CSL Limited",
+    sector:"Healthcare",
+    weight:7.14,
+    price:141.15,
+    target:197.38,
+    upside:39.83,
+    consensus:"Buy",
+    buy:4,
+    hold:4,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"09 Mar 2026"
+  },
+  {
+    ticker:"MQG",
+    name:"Macquarie Group",
+    sector:"Financials",
+    weight:7.14,
+    price:208.40,
+    target:230.00,
+    upside:10.36,
+    consensus:"Buy",
+    buy:5,
+    hold:3,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"12 Mar 2026"
+  },
+  {
+    ticker:"JHX",
+    name:"James Hardie Industries",
+    sector:"Materials / Industrials",
+    weight:7.14,
+    price:49.20,
+    target:56.50,
+    upside:14.84,
+    consensus:"Buy",
+    buy:6,
+    hold:2,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"10 Mar 2026"
+  },
+  {
+    ticker:"WDS",
+    name:"Woodside Energy Group",
+    sector:"Energy",
+    weight:7.14,
+    price:25.80,
+    target:31.00,
+    upside:20.16,
+    consensus:"Buy",
+    buy:4,
+    hold:3,
+    sell:1,
+    status:"Core Conviction",
+    lastUpdate:"08 Mar 2026"
+  },
+  {
+    ticker:"STO",
+    name:"Santos Limited",
+    sector:"Energy",
+    weight:7.14,
+    price:7.10,
+    target:8.60,
+    upside:21.13,
+    consensus:"Buy",
+    buy:5,
+    hold:2,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"08 Mar 2026"
+  },
+  {
+    ticker:"RMD",
+    name:"ResMed Inc",
+    sector:"Healthcare",
+    weight:7.14,
+    price:32.10,
+    target:36.50,
+    upside:13.71,
+    consensus:"Buy",
+    buy:4,
+    hold:3,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"11 Mar 2026"
+  },
+  {
+    ticker:"SHL",
+    name:"Sonic Healthcare",
+    sector:"Healthcare",
+    weight:7.14,
+    price:27.40,
+    target:31.20,
+    upside:13.87,
+    consensus:"Hold",
+    buy:2,
+    hold:5,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"07 Mar 2026"
+  },
+  {
+    ticker:"AIA",
+    name:"Auckland International Airport",
+    sector:"Infrastructure",
+    weight:7.14,
+    price:8.25,
+    target:8.95,
+    upside:8.48,
+    consensus:"Hold",
+    buy:2,
+    hold:4,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"06 Mar 2026"
+  },
+  {
+    ticker:"NXT",
+    name:"NEXTDC Limited",
+    sector:"Technology / Data Centres",
+    weight:7.14,
+    price:17.80,
+    target:20.90,
+    upside:17.42,
+    consensus:"Buy",
+    buy:5,
+    hold:2,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"11 Mar 2026"
+  },
+  {
+    ticker:"MIN",
+    name:"Mineral Resources Limited",
+    sector:"Materials",
+    weight:7.14,
+    price:44.60,
+    target:53.50,
+    upside:19.96,
+    consensus:"Buy",
+    buy:4,
+    hold:3,
+    sell:1,
+    status:"Core Conviction",
+    lastUpdate:"10 Mar 2026"
+  },
+  {
+    ticker:"CTD",
+    name:"Corporate Travel Management",
+    sector:"Consumer / Services",
+    weight:7.14,
+    price:16.90,
+    target:21.50,
+    upside:27.22,
+    consensus:"Buy",
+    buy:5,
+    hold:2,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"10 Mar 2026"
+  },
+  {
+    ticker:"DMP",
+    name:"Domino’s Pizza Enterprises",
+    sector:"Consumer Discretionary",
+    weight:7.14,
+    price:34.20,
+    target:35.50,
+    upside:3.80,
+    consensus:"Hold",
+    buy:1,
+    hold:5,
+    sell:1,
+    status:"Under Review / Trimmed",
+    lastUpdate:"09 Mar 2026"
+  },
+  {
+    ticker:"BAP",
+    name:"Bapcor Limited",
+    sector:"Consumer Discretionary",
+    weight:7.14,
+    price:4.85,
+    target:5.10,
+    upside:5.15,
+    consensus:"Hold",
+    buy:1,
+    hold:4,
+    sell:2,
+    status:"Legacy / Monitored",
+    lastUpdate:"09 Mar 2026"
+  },
+  {
+    ticker:"ALL",
+    name:"Aristocrat Leisure",
+    sector:"Consumer Discretionary",
+    weight:7.14,
+    price:55.30,
+    target:62.00,
+    upside:12.12,
+    consensus:"Buy",
+    buy:5,
+    hold:2,
+    sell:0,
+    status:"Core Conviction",
+    lastUpdate:"12 Mar 2026"
+  }
+];
+
+let currentFilter = "all";
+let currentSort = { key:"upside", dir:"desc" };
+let searchTerm = "";
+let riskMode = false;
+
+function consensusOrder(v){
+  if(v === "Buy") return 3;
+  if(v === "Hold") return 2;
+  if(v === "Sell") return 1;
+  return 0;
+}
+
+function statusOrder(v){
+  if(v.includes("Core")) return 3;
+  if(v.includes("Review")) return 2;
+  if(v.includes("Legacy")) return 1;
+  return 0;
+}
+
+function getStatusClass(status){
+  if(status.includes("Core")) return "core";
+  if(status.includes("Review")) return "review";
+  if(status.includes("Legacy")) return "legacy";
+  return "core";
+}
+
+function getConsensusClass(c){
+  if(c === "Buy") return "buy";
+  if(c === "Hold") return "hold";
+  return "sell";
+}
+
+function getSignal(h){
+  if(h.upside >= 20 && h.consensus === "Buy" && h.status.includes("Core")) return {label:"STRONG BUY", cls:"signal-strong"};
+  if(h.upside < 7 || h.status.includes("Legacy")) return {label:"WATCH", cls:"signal-watch"};
+  if(h.consensus === "Sell") return {label:"RISK", cls:"signal-risk"};
+  return {label:"HOLD", cls:"signal-neutral"};
+}
+
+function normaliseRows(data){
+  const ranked = [...data].sort((a,b)=>b.upside-a.upside);
+  return data.map(row => {
+    const rank = ranked.findIndex(r => r.ticker === row.ticker) + 1;
+    return {...row, rank, signal:getSignal(row)};
+  });
+}
+
+function passesFilter(h){
+  if(currentFilter === "all") return true;
+  if(currentFilter === "core") return h.status.includes("Core");
+  if(currentFilter === "review") return h.status.includes("Review") || h.status.includes("Legacy");
+  if(currentFilter === "high-upside") return h.upside > 20;
+  if(currentFilter === "buy") return h.consensus === "Buy";
+  return true;
+}
+
+function passesSearch(h){
+  const s = searchTerm.trim().toLowerCase();
+  if(!s) return true;
+  return [
+    h.ticker,
+    h.name,
+    h.sector,
+    h.consensus,
+    h.status
+  ].join(" ").toLowerCase().includes(s);
+}
+
+function compare(a,b,key,dir){
+  let av = a[key];
+  let bv = b[key];
+
+  if(key === "consensus"){
+    av = consensusOrder(av);
+    bv = consensusOrder(bv);
+  } else if(key === "status"){
+    av = statusOrder(av);
+    bv = statusOrder(bv);
+  } else if(key === "signal"){
+    av = a.signal.label;
+    bv = b.signal.label;
+  } else if(typeof av === "string"){
+    av = av.toLowerCase();
+    bv = bv.toLowerCase();
+  }
+
+  if(av < bv) return dir === "asc" ? -1 : 1;
+  if(av > bv) return dir === "asc" ? 1 : -1;
+  return 0;
+}
+
+function getVisibleData(){
+  let rows = normaliseRows(portfolio)
+    .filter(passesFilter)
+    .filter(passesSearch);
+
+  rows.sort((a,b)=>compare(a,b,currentSort.key,currentSort.dir));
+  return rows;
+}
+
+function renderTickerTape(){
+  const tape = document.getElementById("tickerTape");
+  tape.innerHTML = normaliseRows(portfolio)
+    .sort((a,b)=>a.rank-b.rank)
+    .map(h => `
+      <div class="ticker-item">
+        <span class="ticker-symbol">${h.ticker}</span>
+        <span>$${h.price.toFixed(2)}</span>
+        <span class="${h.upside > 0 ? 'ticker-up' : h.upside < 0 ? 'ticker-down' : 'ticker-neutral'}">
+          ${h.upside > 0 ? '+' : ''}${h.upside.toFixed(2)}%
+        </span>
+      </div>
+    `).join("");
+}
+
+function renderSummary(){
+  const rows = normaliseRows(portfolio);
+  const total = rows.reduce((s,h)=>s+h.weight,0);
+  const avgUpside = rows.reduce((s,h)=>s+h.upside,0)/rows.length;
+  const buyCount = rows.filter(h=>h.consensus==="Buy").length;
+  const reviewCount = rows.filter(h=>!h.status.includes("Core")).length;
+  const strongCount = rows.filter(h=>h.signal.label==="STRONG BUY").length;
+  const highConviction = rows.filter(h=>h.status.includes("Core")).length;
+
+  const cells = [
+    {label:"Holdings", value:rows.length, note:"Preferred names"},
+    {label:"Model Weight", value:`${total.toFixed(2)}%`, note:"Current placeholder total"},
+    {label:"Avg Upside", value:`${avgUpside.toFixed(2)}%`, note:"Across all holdings"},
+    {label:"Consensus Buy", value:buyCount, note:"Names rated buy"},
+    {label:"Strong Buy Signals", value:strongCount, note:"Upside + conviction"},
+    {label:"Review / Legacy", value:reviewCount, note:`${highConviction} core conviction`}
+  ];
+
+  document.getElementById("summaryStrip").innerHTML = cells.map(c => `
+    <div class="summary-cell">
+      <div class="summary-label">${c.label}</div>
+      <div class="summary-value">${c.value}</div>
+      <div class="summary-note">${c.note}</div>
+    </div>
+  `).join("");
+}
+
+function renderTable(){
+  const rows = getVisibleData();
+  const body = document.getElementById("holdingsBody");
+
+  body.innerHTML = rows.map(h => `
+    <tr class="${riskMode && (h.status.includes('Legacy') || h.upside < 7) ? '' : ''}">
+      <td>${h.rank}</td>
+      <td class="ticker">${h.ticker}</td>
+      <td class="company">${h.name}</td>
+      <td class="muted">${h.sector}</td>
+      <td class="right">${h.weight.toFixed(2)}%</td>
+      <td class="right">$${h.price.toFixed(2)}</td>
+      <td class="right">$${h.target.toFixed(2)}</td>
+      <td class="right ${h.upside > 0 ? 'pos' : h.upside < 0 ? 'neg' : 'neu'}">${h.upside > 0 ? '+' : ''}${h.upside.toFixed(2)}%</td>
+      <td><span class="badge ${getConsensusClass(h.consensus)}">${h.consensus}</span></td>
+      <td class="right">${h.buy}</td>
+      <td class="right">${h.hold}</td>
+      <td class="right">${h.sell}</td>
+      <td class="${h.signal.cls}">${h.signal.label}</td>
+      <td><span class="badge ${getStatusClass(h.status)}">${h.status.includes('Core') ? 'CORE' : h.status.includes('Review') ? 'REVIEW' : 'LEGACY'}</span></td>
+      <td class="muted">${h.lastUpdate}</td>
+    </tr>
+  `).join("");
+
+  if(riskMode){
+    Array.from(body.querySelectorAll("tr")).forEach((tr, idx) => {
+      const item = rows[idx];
+      const risk = item.status.includes("Legacy") || item.upside < 7 || item.consensus === "Sell";
+      if(!risk) tr.classList.add("dimmed");
+    });
+  }
+}
+
+function renderTopOpportunities(){
+  const top = normaliseRows(portfolio)
+    .sort((a,b)=>b.upside-a.upside)
+    .slice(0,5);
+
+  document.getElementById("topOpportunities").innerHTML = top.map(h => `
+    <div class="insight">
+      <div class="insight-title">${h.rank}. ${h.ticker} — ${h.upside.toFixed(2)}% upside</div>
+      <div class="insight-copy">
+        Target $${h.target.toFixed(2)} vs price $${h.price.toFixed(2)}. 
+        Consensus ${h.consensus}. 
+        Signal: <span class="${h.signal.cls}">${h.signal.label}</span>.
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderRiskFlags(){
+  const risks = normaliseRows(portfolio)
+    .filter(h => h.upside < 7 || h.status.includes("Legacy") || h.status.includes("Review"))
+    .sort((a,b)=>a.upside-b.upside);
+
+  document.getElementById("riskFlags").innerHTML = risks.length ? risks.map(h => `
+    <div class="insight">
+      <div class="insight-title">${h.ticker} — ${h.status}</div>
+      <div class="insight-copy">
+        Upside ${h.upside.toFixed(2)}%, consensus ${h.consensus}, broker split ${h.buy}/${h.hold}/${h.sell}.
+      </div>
+    </div>
+  `).join("") : `<div class="insight-copy">No immediate risk flags detected.</div>`;
+}
+
+function renderSnapshot(){
+  const rows = normaliseRows(portfolio);
+  const sectors = {};
+  rows.forEach(h => {
+    sectors[h.sector] = (sectors[h.sector] || 0) + h.weight;
+  });
+  const largestSector = Object.entries(sectors).sort((a,b)=>b[1]-a[1])[0];
+  const avgTargetGap = rows.reduce((s,h)=>s+(h.target-h.price),0)/rows.length;
+  const buyRatio = `${rows.filter(h=>h.consensus==="Buy").length}/${rows.length}`;
+  const reviewNames = rows.filter(h=>!h.status.includes("Core")).map(h=>h.ticker).join(", ") || "None";
+
+  document.getElementById("snapshotKpis").innerHTML = `
+    <div class="kpi-row"><span class="label">Largest Sector</span><span class="value">${largestSector[0]}</span></div>
+    <div class="kpi-row"><span class="label">Sector Weight</span><span class="value">${largestSector[1].toFixed(2)}%</span></div>
+    <div class="kpi-row"><span class="label">Avg Target Gap</span><span class="value">$${avgTargetGap.toFixed(2)}</span></div>
+    <div class="kpi-row"><span class="label">Buy Ratio</span><span class="value">${buyRatio}</span></div>
+    <div class="kpi-row"><span class="label">Review Names</span><span class="value">${reviewNames}</span></div>
+  `;
+}
+
+function renderHouseView(){
+  document.getElementById("houseViewNotes").innerHTML = `
+    <div class="insight">
+      <div class="insight-title">Healthcare remains a core pillar</div>
+      <div class="insight-copy">CSL, ResMed and Sonic anchor quality and defensive growth within the portfolio.</div>
+    </div>
+    <div class="insight">
+      <div class="insight-title">Energy and cyclicals add offset</div>
+      <div class="insight-copy">Woodside, Santos and select industrial/resource names give a balancing sleeve against growth-led exposures.</div>
+    </div>
+    <div class="insight">
+      <div class="insight-title">Under-review positions are clearly separated</div>
+      <div class="insight-copy">Domino’s and Bapcor are intentionally visible as monitored names rather than core conviction holdings.</div>
+    </div>
+    <div class="insight">
+      <div class="insight-title">Next upgrade</div>
+      <div class="insight-copy">Add target weights, live performance, valuation notes, and committee decisions such as Accumulate, Hold, Review or Exit.</div>
+    </div>
+  `;
+}
+
+function renderAll(){
+  renderTickerTape();
+  renderSummary();
+  renderTable();
+  renderTopOpportunities();
+  renderRiskFlags();
+  renderSnapshot();
+  renderHouseView();
+}
+
+function updateClock(){
+  const now = new Date();
+  document.getElementById("clock").textContent =
+    now.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}) +
+    "  " +
+    now.toLocaleTimeString();
+}
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    renderTable();
+  });
+});
+
+document.querySelectorAll("th[data-sort]").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    if(currentSort.key === key){
+      currentSort.dir = currentSort.dir === "asc" ? "desc" : "asc";
+    } else {
+      currentSort.key = key;
+      currentSort.dir = key === "name" || key === "ticker" || key === "sector" ? "asc" : "desc";
+    }
+    renderTable();
+  });
+});
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchTerm = e.target.value;
+  renderTable();
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  currentFilter = "all";
+  currentSort = { key:"upside", dir:"desc" };
+  searchTerm = "";
+  riskMode = false;
+  document.getElementById("searchInput").value = "";
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('.filter-btn[data-filter="all"]').classList.add("active");
+  renderAll();
+});
+
+document.getElementById("sortUpsideBtn").addEventListener("click", () => {
+  currentSort = { key:"upside", dir:"desc" };
+  renderTable();
+});
+
+document.getElementById("toggleRiskBtn").addEventListener("click", () => {
+  riskMode = !riskMode;
+  renderTable();
+});
+
+document.addEventListener("keydown", e => {
+  if(e.key === "/"){
+    e.preventDefault();
+    document.getElementById("searchInput").focus();
+  }
+  if(e.key.toLowerCase() === "u"){
+    currentSort = { key:"upside", dir:"desc" };
+    renderTable();
+  }
+  if(e.key.toLowerCase() === "r"){
+    riskMode = !riskMode;
+    renderTable();
+  }
+});
+
+updateClock();
+setInterval(updateClock, 1000);
+renderAll();
+</script>
+</body>
+</html>
