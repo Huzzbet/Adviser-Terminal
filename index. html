@@ -212,7 +212,17 @@ Update
 Save Trade
 </button>
 
+<button onclick="exportTrades()">
+Export Journal
+</button>
+
 <div id="journal"></div>
+
+<hr>
+
+<h3>Trading Stats</h3>
+
+<div id="tradeStats"></div>
 
 </div>
 
@@ -225,23 +235,58 @@ let marketState = "Neutral";
 const watchlist = [
 
 {
-ticker:"NVDA",
+ticker:"PME",
 momentum:9,
+earnings:8,
+ai:0
+},
+
+{
+ticker:"TNE",
+momentum:8,
+earnings:9,
+ai:0
+},
+
+{
+ticker:"XRO",
+momentum:8,
+earnings:8,
+ai:4
+},
+
+{
+ticker:"NST",
+momentum:7,
+earnings:7,
+ai:0
+},
+
+{
+ticker:"GMD",
+momentum:7,
+earnings:7,
+ai:0
+},
+
+{
+ticker:"GPT",
+momentum:6,
+earnings:7,
+ai:0
+},
+
+{
+ticker:"NVDA",
+momentum:10,
 earnings:10,
 ai:10
 },
 
 {
-ticker:"META",
-momentum:8,
-earnings:8,
-ai:7
-},
-
-{
 ticker:"PLTR",
-momentum:8,
-earnings:7,
+momentum:9,
+earnings:8,
 ai:10
 },
 
@@ -251,6 +296,8 @@ momentum:10,
 earnings:0,
 ai:0
 }
+
+];
 
 ];
 
@@ -287,8 +334,18 @@ marketState = "Bear";
 
 }
 
+let colour = "yellow";
+
+if(marketState==="Bull")
+colour = "green";
+
+if(marketState==="Bear")
+colour = "red";
+
 document.getElementById("marketResult").innerHTML =
-marketState;
+`<span class="${colour}">
+${marketState}
+</span>`;
 
 updateTQQQ();
 renderWatchlist();
@@ -298,10 +355,18 @@ function updateTQQQ(){
 
 let text;
 
-if(marketState==="Bull"){
+const vix =
+Number(document.getElementById("vix").value);
+
+if(marketState==="Bull" && vix < 18){
+else if(vix < 25){
 
 text =
-"🔥 ACTIVE — Maximum 20% allocation";
+"⚠ CAUTION — Half Position";
+
+}
+text =
+"🚀 GREEN LIGHT — Maximum 20% allocation";
 
 }
 else{
@@ -381,8 +446,17 @@ Number(document.getElementById("stopPrice").value);
 const riskAmount =
 account * riskPercent /100;
 
+const riskPerShare =
+Math.abs(entry - stop);
+
+if(riskPerShare === 0){
+    document.getElementById("riskOutput").innerHTML =
+    "⚠ Entry and Stop cannot be the same";
+    return;
+}
+
 const shares =
-Math.floor(riskAmount/(entry-stop));
+Math.floor(riskAmount / riskPerShare);
 
 document.getElementById("riskOutput").innerHTML =
 
@@ -398,20 +472,22 @@ Capital Required: $${(shares*entry).toFixed(2)}
 
 function portfolioHeat(){
 
+const cash =
+Number(document.getElementById("cashPct").value);
+
+const cash =
+Number(document.getElementById("cashPct").value);
+
 const growth =
 Number(document.getElementById("growthPct").value);
 
-let result = "";
+if(cash + growth !== 100){
 
-if(growth < 50){
+document.getElementById("portfolioOutput")
+.innerHTML =
+"⚠ Cash + Growth must equal 100%";
 
-result = "🟢 Conservative";
-
-}
-else if(growth < 75){
-
-result = "🟡 Aggressive";
-
+return;
 }
 else{
 
@@ -473,7 +549,10 @@ document.getElementById("pnl").value;
 let trades =
 JSON.parse(localStorage.getItem("trades")) || [];
 
-trades.push({
+if(!ticker || !pnl){
+    alert("Please enter a ticker and PnL");
+    return;
+}
 
 ticker,
 pnl,
@@ -497,7 +576,7 @@ JSON.parse(localStorage.getItem("trades")) || [];
 
 let html="";
 
-trades.reverse().forEach(t=>{
+[...trades].reverse().forEach(t=>{
 
 html += `
 <div>
@@ -514,10 +593,56 @@ $${t.pnl}
 document.getElementById("journal")
 .innerHTML = html;
 
+const wins =
+trades.filter(t=>Number(t.pnl) > 0).length;
+
+const losses =
+trades.filter(t=>Number(t.pnl) <= 0).length;
+
+const totalPnL =
+trades.reduce(
+(sum,t)=>sum + Number(t.pnl || 0),
+0
+);
+
+const winRate =
+trades.length
+? ((wins/trades.length)*100).toFixed(1)
+: 0;
+
+document.getElementById("tradeStats")
+.innerHTML = `
+Trades: ${trades.length}<br>
+Wins: ${wins}<br>
+Losses: ${losses}<br>
+Win Rate: ${winRate}%<br>
+Total P&L: $${totalPnL.toFixed(2)}
+`;
+
 }
 
-calculateMarket();
-loadTrades();
+function exportTrades(){
+
+const data =
+localStorage.getItem("trades");
+
+const blob =
+new Blob([data],{
+type:"application/json"
+});
+
+const a =
+document.createElement("a");
+
+a.href =
+URL.createObjectURL(blob);
+
+a.download =
+"trade-journal.json";
+
+a.click();
+
+}
 
 </script>
 
