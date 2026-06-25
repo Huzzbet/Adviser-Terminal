@@ -468,8 +468,6 @@ Capital Required: $${(shares*entry).toFixed(2)}
 
 function portfolioHeat(){
 
-function portfolioHeat(){
-
     const cash =
     Number(document.getElementById("cashPct").value);
 
@@ -507,6 +505,7 @@ function portfolioHeat(){
     result;
 
 }
+
 function updateFearGreed(){
 
 const value =
