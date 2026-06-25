@@ -468,44 +468,45 @@ Capital Required: $${(shares*entry).toFixed(2)}
 
 function portfolioHeat(){
 
-const cash =
-Number(document.getElementById("cashPct").value);
+function portfolioHeat(){
 
-const growth =
-Number(document.getElementById("growthPct").value);
+    const cash =
+    Number(document.getElementById("cashPct").value);
 
-if(cash + growth !== 100){
+    const growth =
+    Number(document.getElementById("growthPct").value);
 
-document.getElementById("portfolioOutput")
-.innerHTML =
-"⚠ Cash + Growth must equal 100%";
+    if(cash + growth !== 100){
 
-return;
+        document.getElementById("portfolioOutput").innerHTML =
+        "⚠ Cash + Growth must equal 100%";
+
+        return;
+
+    }
+
+    let result = "";
+
+    if(cash >= 60){
+
+        result = "🟢 Defensive";
+
+    }
+    else if(cash >= 40){
+
+        result = "🟡 Balanced";
+
+    }
+    else{
+
+        result = "🔴 Very Aggressive";
+
+    }
+
+    document.getElementById("portfolioOutput").innerHTML =
+    result;
+
 }
-
-let result = "";
-else{
-
-if(cash >= 60){
-
-    result = "🟢 Defensive";
-
-}
-else if(cash >=40){
-
-    result = "🟡 Balanced";
-
-}
-else{
-result = "🔴 Very Aggressive";
-
-}
-
-document.getElementById("portfolioOutput")
-.innerHTML = result;
-
-}
-
 function updateFearGreed(){
 
 const value =
@@ -632,24 +633,24 @@ Total P&L: $${totalPnL.toFixed(2)}
 
 function exportTrades(){
 
-const data =
-localStorage.getItem("trades");
+    const data =
+    localStorage.getItem("trades") || "[]";
 
-const blob =
-new Blob([data],{
-type:"application/json"
-});
+    const blob =
+    new Blob([data],{
+        type:"application/json"
+    });
 
-const a =
-document.createElement("a");
+    const a =
+    document.createElement("a");
 
-a.href =
-URL.createObjectURL(blob);
+    a.href =
+    URL.createObjectURL(blob);
 
-a.download =
-"trade-journal.json";
+    a.download =
+    "trade-journal.json";
 
-a.click();
+    a.click();
 
 }
 
@@ -661,6 +662,7 @@ calculateMarket();
 updateFearGreed();
 portfolioHeat();
 loadTrades();
+
 </script>
 
 </body>
