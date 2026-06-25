@@ -299,8 +299,6 @@ ai:0
 
 ];
 
-];
-
 function calculateMarket(){
 
 let score = 0;
@@ -358,21 +356,19 @@ let text;
 const vix =
 Number(document.getElementById("vix").value);
 
-if(marketState==="Bull" && vix < 18){
-else if(vix < 25){
+if (marketState === "Bull" && vix < 18) {
 
-text =
-"⚠ CAUTION — Half Position";
+    text = "🚀 GREEN LIGHT — Maximum 20% allocation";
 
 }
-text =
-"🚀 GREEN LIGHT — Maximum 20% allocation";
+else if (vix < 25) {
+
+    text = "⚠ CAUTION — Half Position";
 
 }
-else{
+else {
 
-text =
-"⚠️ AVOID — Trend not supportive";
+    text = "⚠️ AVOID — Trend not supportive";
 
 }
 
@@ -475,9 +471,6 @@ function portfolioHeat(){
 const cash =
 Number(document.getElementById("cashPct").value);
 
-const cash =
-Number(document.getElementById("cashPct").value);
-
 const growth =
 Number(document.getElementById("growthPct").value);
 
@@ -489,8 +482,21 @@ document.getElementById("portfolioOutput")
 
 return;
 }
+
+let result = "";
 else{
 
+if(cash >= 60){
+
+    result = "🟢 Defensive";
+
+}
+else if(cash >=40){
+
+    result = "🟡 Balanced";
+
+}
+else{
 result = "🔴 Very Aggressive";
 
 }
@@ -554,10 +560,13 @@ if(!ticker || !pnl){
     return;
 }
 
-ticker,
-pnl,
-date:new Date().toLocaleDateString()
+trades.push({
 
+    ticker,
+
+    pnl,
+
+    date: new Date().toLocaleDateString()
 });
 
 localStorage.setItem(
@@ -644,6 +653,14 @@ a.click();
 
 }
 
+// =======================
+// INITIALISE DASHBOARD
+// =======================
+
+calculateMarket();
+updateFearGreed();
+portfolioHeat();
+loadTrades();
 </script>
 
 </body>
