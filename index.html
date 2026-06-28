@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EdgeFlow Pro Dashboard</title>
+
+<style>
+
+:root{
+--bg:#020617;
+--card:#0f172a;
+--border:#1e293b;
+--text:#e2e8f0;
+--green:#22c55e;
+--yellow:#eab308;
+--red:#ef4444;
+--blue:#38bdf8;
+}
+
+body{
+background:var(--bg);
+color:var(--text);
+font-family:Arial;
+padding:20px;
+margin:0;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+}
+
+.card{
+background:var(--card);
+padding:18px;
+border-radius:16px;
+border:1px solid var(--border);
+margin-bottom:16px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:12px;
+}
+
+button{
+padding:10px 14px;
+border:none;
+border-radius:10px;
+font-weight:bold;
+cursor:pointer;
+}
+
+input{
+padding:8px;
+margin:4px;
+width:100px;
+}
+
+.green{color:var(--green);}
+.red{color:var(--red);}
+.yellow{color:var(--yellow);}
+
+.badge{
+padding:6px 10px;
+border-radius:8px;
+font-size:12px;
+font-weight:bold;
+}
+
+.buy{
+background:rgba(34,197,94,.2);
+color:var(--green);
+}
+
+.hold{
+background:rgba(234,179,8,.2);
+color:var(--yellow);
+}
+
+.cut{
+background:rgba(239,68,68,.2);
+color:var(--red);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+td,th{
+padding:8px;
+border-bottom:1px solid #334155;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+<h2>📊 Market Regime Engine</h2>
+
+<label>VIX</label>
+<input id="vix" value="18">
+
+<label>SP500 Above 200 DMA</label>
+<input type="checkbox" id="sp" checked>
+
+<label>NASDAQ Above 50 DMA</label>
+<input type="checkbox" id="nasdaq" checked>
+
+<button onclick="calculateMarket()">
+Calculate
+</button>
+
+<h3 id="marketResult"></h3>
+
+</div>
+
+<div class="card">
+
+<h2>🔥 TQQQ Signal</h2>
+
+<h3 id="tqqqSignal"></h3>
+
+</div>
+
+<div class="card">
+
+<h2>📈 Watchlist Rankings</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Stock</th>
+<th>Momentum</th>
+<th>Total Score</th>
+<th>Signal</th>
+</tr>
+</thead>
+
+<tbody id="watchlistTable"></tbody>
+
+</table>
+
+</div>
+
+<div class="card">
+
+<h2>⚖️ Position Size Calculator</h2>
+
+<input id="accountSize" placeholder="Account" value="5000">
+
+<input id="riskPercent" placeholder="Risk %" value="2">
+
+<input id="entryPrice" placeholder="Entry" value="50">
+
+<input id="stopPrice" placeholder="Stop" value="45">
+
+<button onclick="calcRisk()">
+Calculate
+</button>
+
+<h3 id="riskOutput"></h3>
+
+</div>
+
+<div class="card">
+
+<h2>💼 Portfolio Heat</h2>
+
+<input id="cashPct" value="40">
+<input id="growthPct" value="60">
+
+<button onclick="portfolioHeat()">
+Calculate
+</button>
+
+<h3 id="portfolioOutput"></h3>
+
+</div>
+
+<div class="card">
+
+<h2>😱 Fear & Greed</h2>
+
+<input id="fearGreed" value="70">
+
+<button onclick="updateFearGreed()">
+Update
+</button>
+
+<h3 id="fearOutput"></h3>
+
+</div>
+
+<div class="card">
+
+<h2>📝 Trade Journal</h2>
+
+<input id="ticker" placeholder="Ticker">
+<input id="pnl" placeholder="PnL">
+
+<button onclick="saveTrade()">
+Save Trade
+</button>
+
+<button onclick="exportTrades()">
+Export Journal
+</button>
+
+<div id="journal"></div>
+
+<hr>
+
+<h3>Trading Stats</h3>
+
+<div id="tradeStats"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let marketState = "Neutral";
+
+const watchlist = [
+
+{
+ticker:"PME",
+momentum:9,
+earnings:8,
+ai:0
+},
+
+{
+ticker:"TNE",
+momentum:8,
+earnings:9,
+ai:0
+},
+
+{
+ticker:"XRO",
+momentum:8,
+earnings:8,
+ai:4
+},
+
+{
+ticker:"NST",
+momentum:7,
+earnings:7,
+ai:0
+},
+
+{
+ticker:"GMD",
+momentum:7,
+earnings:7,
+ai:0
+},
+
+{
+ticker:"GPT",
+momentum:6,
+earnings:7,
+ai:0
+},
+
+{
+ticker:"NVDA",
+momentum:10,
+earnings:10,
+ai:10
+},
+
+{
+ticker:"PLTR",
+momentum:9,
+earnings:8,
+ai:10
+},
+
+{
+ticker:"TQQQ",
+momentum:10,
+earnings:0,
+ai:0
+}
+
+];
+
+function calculateMarket(){
+
+let score = 0;
+
+const vix =
+Number(document.getElementById("vix").value);
+
+const sp =
+document.getElementById("sp").checked;
+
+const nasdaq =
+document.getElementById("nasdaq").checked;
+
+if(vix < 20) score += 2;
+if(sp) score += 2;
+if(nasdaq) score += 2;
+
+if(score >= 5){
+
+marketState = "Bull";
+
+}
+else if(score >=3){
+
+marketState = "Neutral";
+
+}
+else{
+
+marketState = "Bear";
+
+}
+
+let colour = "yellow";
+
+if(marketState==="Bull")
+colour = "green";
+
+if(marketState==="Bear")
+colour = "red";
+
+document.getElementById("marketResult").innerHTML =
+`<span class="${colour}">
+${marketState}
+</span>`;
+
+updateTQQQ();
+renderWatchlist();
+}
+
+function updateTQQQ(){
+
+let text;
+
+const vix =
+Number(document.getElementById("vix").value);
+
+if (marketState === "Bull" && vix < 18) {
+
+    text = "🚀 GREEN LIGHT — Maximum 20% allocation";
+
+}
+else if (vix < 25) {
+
+    text = "⚠ CAUTION — Half Position";
+
+}
+else {
+
+    text = "⚠️ AVOID — Trend not supportive";
+
+}
+
+document.getElementById("tqqqSignal").innerHTML =
+text;
+
+}
+
+function renderWatchlist(){
+
+let html="";
+
+watchlist.forEach(stock=>{
+
+let score =
+stock.momentum +
+stock.earnings +
+stock.ai;
+
+let signal = "";
+
+if(score >= 25){
+
+signal =
+"<span class='badge buy'>BUY</span>";
+
+}
+else if(score >= 18){
+
+signal =
+"<span class='badge hold'>HOLD</span>";
+
+}
+else{
+
+signal =
+"<span class='badge cut'>CUT</span>";
+
+}
+
+html += `
+<tr>
+<td>${stock.ticker}</td>
+<td>${stock.momentum}</td>
+<td>${score}</td>
+<td>${signal}</td>
+</tr>
+`;
+
+});
+
+document.getElementById("watchlistTable").innerHTML =
+html;
+
+}
+
+function calcRisk(){
+
+const account =
+Number(document.getElementById("accountSize").value);
+
+const riskPercent =
+Number(document.getElementById("riskPercent").value);
+
+const entry =
+Number(document.getElementById("entryPrice").value);
+
+const stop =
+Number(document.getElementById("stopPrice").value);
+
+const riskAmount =
+account * riskPercent /100;
+
+const riskPerShare =
+Math.abs(entry - stop);
+
+if(riskPerShare === 0){
+    document.getElementById("riskOutput").innerHTML =
+    "⚠ Entry and Stop cannot be the same";
+    return;
+}
+
+const shares =
+Math.floor(riskAmount / riskPerShare);
+
+document.getElementById("riskOutput").innerHTML =
+
+`
+Risk Amount: $${riskAmount.toFixed(2)}
+<br>
+Shares: ${shares}
+<br>
+Capital Required: $${(shares*entry).toFixed(2)}
+`;
+
+}
+
+function portfolioHeat(){
+
+    const cash =
+    Number(document.getElementById("cashPct").value);
+
+    const growth =
+    Number(document.getElementById("growthPct").value);
+
+    if(cash + growth !== 100){
+
+        document.getElementById("portfolioOutput").innerHTML =
+        "⚠ Cash + Growth must equal 100%";
+
+        return;
+
+    }
+
+    let result = "";
+
+    if(cash >= 60){
+
+        result = "🟢 Defensive";
+
+    }
+    else if(cash >= 40){
+
+        result = "🟡 Balanced";
+
+    }
+    else{
+
+        result = "🔴 Very Aggressive";
+
+    }
+
+    document.getElementById("portfolioOutput").innerHTML =
+    result;
+
+}
+
+function updateFearGreed(){
+
+const value =
+Number(document.getElementById("fearGreed").value);
+
+let result="";
+
+if(value<25){
+
+result="Extreme Fear";
+
+}
+else if(value<45){
+
+result="Fear";
+
+}
+else if(value<60){
+
+result="Neutral";
+
+}
+else if(value<80){
+
+result="Greed";
+
+}
+else{
+
+result="Extreme Greed";
+
+}
+
+document.getElementById("fearOutput")
+.innerHTML=result;
+
+}
+
+function saveTrade(){
+
+const ticker =
+document.getElementById("ticker").value;
+
+const pnl =
+document.getElementById("pnl").value;
+
+let trades =
+JSON.parse(localStorage.getItem("trades")) || [];
+
+if(!ticker || !pnl){
+    alert("Please enter a ticker and PnL");
+    return;
+}
+
+trades.push({
+
+    ticker,
+
+    pnl,
+
+    date: new Date().toLocaleDateString()
+});
+
+localStorage.setItem(
+"trades",
+JSON.stringify(trades)
+);
+
+loadTrades();
+
+}
+
+function loadTrades(){
+
+let trades =
+JSON.parse(localStorage.getItem("trades")) || [];
+
+let html="";
+
+[...trades].reverse().forEach(t=>{
+
+html += `
+<div>
+${t.date}
+|
+${t.ticker}
+|
+$${t.pnl}
+</div>
+`;
+
+});
+
+document.getElementById("journal")
+.innerHTML = html;
+
+const wins =
+trades.filter(t=>Number(t.pnl) > 0).length;
+
+const losses =
+trades.filter(t=>Number(t.pnl) <= 0).length;
+
+const totalPnL =
+trades.reduce(
+(sum,t)=>sum + Number(t.pnl || 0),
+0
+);
+
+const winRate =
+trades.length
+? ((wins/trades.length)*100).toFixed(1)
+: 0;
+
+document.getElementById("tradeStats")
+.innerHTML = `
+Trades: ${trades.length}<br>
+Wins: ${wins}<br>
+Losses: ${losses}<br>
+Win Rate: ${winRate}%<br>
+Total P&L: $${totalPnL.toFixed(2)}
+`;
+
+}
+
+function exportTrades(){
+
+    const data =
+    localStorage.getItem("trades") || "[]";
+
+    const blob =
+    new Blob([data],{
+        type:"application/json"
+    });
+
+    const a =
+    document.createElement("a");
+
+    a.href =
+    URL.createObjectURL(blob);
+
+    a.download =
+    "trade-journal.json";
+
+    a.click();
+
+}
+
+// =======================
+// INITIALISE DASHBOARD
+// =======================
+
+calculateMarket();
+updateFearGreed();
+portfolioHeat();
+loadTrades();
+
+</script>
+
+</body>
+</html>
